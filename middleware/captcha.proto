@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package swap;
+
+service CaptchaDecoder {
+    rpc Base64ToText(Base64Input) returns (Base64Output);
+}
+
+message Base64Input {
+    string base64_data = 1;
+}
+
+message Base64Output {
+    string text_data = 1;
+}
