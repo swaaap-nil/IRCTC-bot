@@ -1,7 +1,7 @@
 import {
     ogLogin,
     searchTrains,
-    findFare as findAvailability,
+    findFareAndAvail,
     getBoardingStationList,
     validateUser,
     makeBooking,
@@ -9,6 +9,7 @@ import {
     captcha2Verify,
 } from './api.mjs'
 import Passenger from './helperFunctions/passenger.mjs'
+import global from './helperFunctions/global.mjs'
 import * as colors from 'colors'
 //txn ID lol
 // (new Date).getTime().toString(36)
@@ -38,7 +39,7 @@ const availibiltySearchParams = {
 
 await new Promise((resolve) => setTimeout(resolve, 3000))
 
-const fareAndAvailaviltyDetails = await findAvailability(
+const fareAndAvailaviltyDetails = await findFareAndAvail(
     availibiltySearchParams,
 )
 
@@ -71,11 +72,18 @@ const {
     captchaUID: greq,
 } = await ogLogin(credentials)
 
+global.setAccessToken(complete_token.accessToken)
+global.setCookies(cookies)
+global.setGreq(greq)
+
+global.logAll()
+
+
 console.log(
     `complete token :`.bgRed,
     `${JSON.stringify(complete_token, null, 4)}`.cyan,
 )
-console.log(`cookies:`.bgRed, `${cookies}`.blue)
+console.log(`cookies:`.bgRed, `${global.getCookies}`.blue)
 
 var { csrfToken: csrfToken1, responseBody: validateUserResponse } =
     await validateUser({
@@ -160,6 +168,8 @@ const captcha2VerifyParams = {
     clientTransactionId: clientTransactionId,
 }
 
+console.log(JSON.stringify(captcha2VerifyParams))
+
 const { responseBody: captcha2VerifyResponse, csrfToken: csrfToken4 } =
     await captcha2Verify(captcha2VerifyParams)
 
@@ -168,4 +178,4 @@ console.log(
     `${JSON.stringify(captcha2VerifyResponse, null, 4)}`.cyan,
 )
 
-console.log(`csrf-token 3:`.bgGreen, csrfToken4)
+console.log(`csrf-token 4:`.bgGreen, csrfToken4)

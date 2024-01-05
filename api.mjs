@@ -62,14 +62,13 @@ export function searchTrains({ source, destination, date }) {
     })
 }
 
-export async function findFare({
+export async function findFareAndAvail({
     trainNo,
     date,
     source,
     dest,
     jrnyClass,
     quota,
-    faretype,
     paymentFlag,
 }) {
     const url = `https://www.irctc.co.in/eticketing/protected/mapps1/avlFarenquiry/${trainNo}/${date}/${source}/${dest}/${jrnyClass}/${quota}/${paymentFlag}`
@@ -78,38 +77,23 @@ export async function findFare({
         'Content-Type': 'application/json; charset=UTF-8',
     }
 
-    const payload = {
-        paymentFlag: paymentFlag,
-        concessionBooking: false,
-        ftBooking: false,
-        loyaltyRedemptionBooking: false,
-        ticketType: 'E',
-        quotaCode: quota,
-        moreThanOneDay: true,
-        trainNumber: trainNo,
-        fromStnCode: source,
-        toStnCode: dest,
-        isLogedinReq: false,
-        journeyDate: date,
-        classCode: jrnyClass,
-    }
 
     const options = {
         method: 'post',
         body: JSON.stringify({
-            paymentFlag: 'N',
             concessionBooking: false,
             ftBooking: false,
             loyaltyRedemptionBooking: false,
             ticketType: 'E',
-            quotaCode: 'GN',
+            quotaCode: quota,
             moreThanOneDay: true,
-            trainNumber: '15658',
-            fromStnCode: 'BGP',
-            toStnCode: 'GZB',
+            trainNumber: trainNo,
+            fromStnCode: source,
+            toStnCode: dest,
             isLogedinReq: false,
-            journeyDate: '20240331',
-            classCode: 'SL',
+            journeyDate: date,
+            classCode: jrnyClass,
+            paymentFlag : paymentFlag
         }),
         headers: headers,
     }
@@ -637,11 +621,11 @@ export async function sendPassengerDetails({
 }
 
 export async function captcha2Verify(
-    csrfToken,
+    {csrfToken,
     accessToken,
     greq,
     captcha2,
-    clientTransactionId,
+    clientTransactionId}
 ) {
     const url = `https://www.irctc.co.in/eticketing/protected/mapps1/captchaverify/${clientTransactionId}/BOOKINGWS/${captcha2}`
 
