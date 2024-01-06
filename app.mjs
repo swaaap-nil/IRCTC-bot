@@ -8,13 +8,11 @@ import {
     sendPassengerDetails,
     captcha2Verify,
 } from './api.mjs'
-import Passenger from './helperFunctions/passenger.mjs'
+
 import global from './helperFunctions/global.mjs'
+ import passengerList from './sample-entries/passenger-entry.mjs'
 import * as colors from 'colors'
-//txn ID lol
-// (new Date).getTime().toString(36)
-//csrf token
-//this.uid = "" + (new Date).getTime()
+
 
 const trainSearchParameters = {
     source: 'BGP',
@@ -24,7 +22,7 @@ const trainSearchParameters = {
 
 var trainList = await searchTrains(trainSearchParameters)
 
-console.log(`train list:`.blue, JSON.stringify(trainList, null, 4))
+// console.log(`train list:`.blue, JSON.stringify(trainList, null, 4))
 
 const availibiltySearchParams = {
     trainNo: '15658',
@@ -37,18 +35,18 @@ const availibiltySearchParams = {
     paymentFlag: 'N',
 }
 
-await new Promise((resolve) => setTimeout(resolve, 3000))
+await new Promise((resolve) => setTimeout(resolve, 2000))
 
 const fareAndAvailaviltyDetails = await findFareAndAvail(
     availibiltySearchParams,
 )
 
-console.log(
-    `fareAndAvailaviltyDetails:`.blue,
-    JSON.stringify(fareAndAvailaviltyDetails, null, 4),
-)
+// console.log(
+//     `fareAndAvailaviltyDetails:`.blue,
+//     JSON.stringify(fareAndAvailaviltyDetails, null, 4),
+// )
 
-await new Promise((resolve) => setTimeout(resolve, 3000))
+await new Promise((resolve) => setTimeout(resolve, 2000))
 //CLICKS BOOK NOW
 
 const finalJourneyParams = {
@@ -72,72 +70,63 @@ const {
     captchaUID: greq,
 } = await ogLogin(credentials)
 
-global.setAccessToken(complete_token.accessToken)
+global.setAccessToken(complete_token.access_token)
 global.setCookies(cookies)
 global.setGreq(greq)
 
-global.logAll()
+// global.logAll();
 
-
-console.log(
-    `complete token :`.bgRed,
-    `${JSON.stringify(complete_token, null, 4)}`.cyan,
-)
-console.log(`cookies:`.bgRed, `${global.getCookies}`.blue)
+// // console.log(
+// //     `complete token :`.bgRed,
+// //     `${JSON.stringify(complete_token, null, 4)}`.cyan,
+// // )
+// // console.log(`cookies:`.bgRed, `${global.getCookies()}`.blue)
 
 var { csrfToken: csrfToken1, responseBody: validateUserResponse } =
     await validateUser({
-        access_token: complete_token.access_token,
-        cookies,
-        greq,
+        access_token: global.getAccessToken(),
+        cookies : global.getCookies(),
+        greq :global.getGreq(),
     })
 
-console.log(
-    `validate user response :`.bgRed,
-    `${JSON.stringify(validateUserResponse, null, 4)}`.cyan,
-)
+global.setCsrfToken(csrfToken1);
 
-console.log(`csrf-token 1:`.bgGreen, csrfToken1)
+// // console.log(
+// //     `validate user response :`.bgRed,
+// //     `${JSON.stringify(validateUserResponse, null, 4)}`.cyan,
+// // )
+
+
+// // console.log(`csrf-token 1:`.bgGreen, csrfToken1)
 
 const boardingStationParams = {
-    bearerToken: complete_token.access_token,
-    greq: greq,
-    csrfToken: csrfToken1,
+    bearerToken: global.getAccessToken(),
+    greq: global.getGreq(),
+    csrfToken: global.getCsrfToken(),
     ...finalJourneyParams,
 }
 
 const { boardingStationList, csrfToken: csrfToken2 } =
     await getBoardingStationList(boardingStationParams)
 
-console.log(
-    `boardingStationList :`.bgRed,
-    `${JSON.stringify(boardingStationList, null, 4)}`.cyan,
-)
+global.setCsrfToken(csrfToken2)
 
-console.log(`csrf-token 2:`.bgGreen, csrfToken2)
 
-const passengerList = [
-    new Passenger({
-        passengerName: 'ANIMAY PATEL',
-        passengerAge: 21,
-        passengerGender: 'M',
-        passengerBerthChoice: 'SL',
-    }),
+// console.log(
+//     `boardingStationList :`.bgRed,
+//     `${JSON.stringify(boardingStationList, null, 4)}`.cyan,
+// )
 
-    new Passenger({
-        passengerName: 'SWAPNIL SUMAN',
-        passengerAge: 22,
-        passengerGender: 'M',
-        passengerBerthChoice: 'SU',
-    }),
-]
+// // console.log(`csrf-token 2:`.bgGreen, csrfToken2)
+
+
 const phNumber = '9529250178'
 
 const sendPassengerDetailsParams = {
-    accessToken: complete_token.access_token,
-    cookies: cookies,
-    greq: greq,
-    csrfToken: csrfToken2,
+    accessToken: global.getAccessToken(),
+    cookies: global.getCookies(),
+    greq: global.getGreq(),
+    csrfToken: global.getCsrfToken(),
     passengerList: passengerList,
     ...finalJourneyParams,
     username: credentials.username,
@@ -150,32 +139,37 @@ const {
     decodedCaptcha: captcha2,
     clientTransactionId,
 } = await sendPassengerDetails(sendPassengerDetailsParams)
+ 
+ global.setCsrfToken(csrfToken3)   
+ global.setClientTransactionID(clientTransactionId)
 
-delete sendPassengerDetails.bankDetailDTO
+// delete sendPassengerDetails.bankDetailDTO
 
-console.log(
-    `sendPassengerDetailsResponse :`.bgRed,
-    `${JSON.stringify(sendPassengerDetailsResponse, null, 4)}`.cyan,
-)
+// console.log(
+//     `sendPassengerDetailsResponse :`.bgRed,
+//     `${JSON.stringify(sendPassengerDetailsResponse, null, 4)}`.cyan,
+// )
 
-console.log(`csrf-token 3:`.bgGreen, csrfToken3)
+// console.log(`csrf-token 3:`.bgGreen, csrfToken3)
 
 const captcha2VerifyParams = {
-    csrfToken: csrfToken3,
-    accessToken: complete_token.access_token,
-    greq: greq,
+    csrfToken: global.getCsrfToken(),
+    accessToken: global.getAccessToken(),
+    greq: global.getGreq(),
     captcha2: captcha2,
-    clientTransactionId: clientTransactionId,
+    clientTransactionId: global.getClientTransactionID(),
 }
 
-console.log(JSON.stringify(captcha2VerifyParams))
 
-const { responseBody: captcha2VerifyResponse, csrfToken: csrfToken4 } =
-    await captcha2Verify(captcha2VerifyParams)
+//TODO handle captcha fails => if (captcha2VerifyResponse.error == "Invalid Captcha")
+const {responseBody : captcha2VerifyResponse, csrfToken : csrfToken4 }= await captcha2Verify(captcha2VerifyParams)
+global.setCsrfToken(csrfToken4)
+
 
 console.log(
     `captcha2 Verification Response :`.bgRed,
     `${JSON.stringify(captcha2VerifyResponse, null, 4)}`.cyan,
 )
 
-console.log(`csrf-token 4:`.bgGreen, csrfToken4)
+
+// console.log(`csrf-token 4:`.bgGreen, csrfToken4)

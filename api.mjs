@@ -2,11 +2,13 @@ import { Buffer } from 'node:buffer'
 import fs from 'fs/promises'
 import createImg from './helperFunctions/createImagefromBase64.mjs'
 import puppeteer from 'puppeteer'
+import global from './helperFunctions/global.mjs'
 //donot remove colors import even if it says not being used
 import * as colors from 'colors'
 import decodeCaptcha from './middleware/captchaMiddleWare.mjs'
 import extractCookies from './helperFunctions/cookieExtractor.mjs'
 import { credentials } from '@grpc/grpc-js'
+import { stdout } from 'node:process'
 
 const defaultheaders = {
     Accept: 'application/json, text/plain, */*',
@@ -42,7 +44,7 @@ export function searchTrains({ source, destination, date }) {
         headers: headers,
     }
 
-    console.log(`SEARCHING TRAINS FROM ${source} to ${destination} on ${date}`)
+    process.stdout.write(`searching trains from ${source} to ${destination} on ${date}...`)
     return new Promise(async (resolve, reject) => {
         try {
             // date format: 20231205
@@ -50,10 +52,9 @@ export function searchTrains({ source, destination, date }) {
             if (!response.ok) {
                 reject(new Error(`HTTP error! Status: ${response.status}`))
             } else {
-                console.log('search successfull ✓'.green)
+                console.log(' search successfull ✓'.green)
                 const responseBody = await response.json()
-                const cookies = response.headers.get('set-cookie')
-                resolve({ responseBody, cookies })
+                resolve(responseBody)
             }
         } catch (error) {
             console.log('search failed'.yellow)
@@ -97,11 +98,14 @@ export async function findFareAndAvail({
         }),
         headers: headers,
     }
-
+    process.stdout.write("fetching fare and availability...")
     const response = await fetch(url, options)
 
     if (response.status === 404) throw new Error('Server down. Error 404')
-    else if (response.status === 200) return response.json()
+    else if (response.status === 200) {
+        console.log(" fetch successfull ✓".green)
+        return response.json()
+    }
     else
         throw new Error(
             `Some error occured.Error code: ${response.status} and response text ${response.text}`,
@@ -120,7 +124,7 @@ export function fetchCaptcha() {
 
     return new Promise(async (resolve, reject) => {
         try {
-            console.log('Fetching Captcha ...')
+            process.stdout.write('fetching Captcha...')
             const response = await fetch(url, options)
 
             if (!response.ok) {
@@ -131,7 +135,7 @@ export function fetchCaptcha() {
                 )
             }
 
-            console.log('Captcha fetched succesfully ✓'.green)
+            console.log('fetch successfull ✓'.green)
             const responseBody = await response.json()
             resolve(responseBody)
         } catch (error) {
@@ -153,11 +157,7 @@ export function requestWebToken(username, password, captcha, captchaUID) {
 
     return new Promise(async (resolve, reject) => {
         try {
-            console.log(
-                'Requesting WebToken as',
-                `${username}`.bgMagenta,
-                '...',
-            )
+            process.stdout.write('requesting webtoken...')  
             const response = await fetch(loginUrl, options)
 
             if (!response.ok) {
@@ -167,7 +167,7 @@ export function requestWebToken(username, password, captcha, captchaUID) {
                     ),
                 )
             }
-            console.log('Acquried WebToken Succesfully ✓'.green)
+            console.log('acquired successfully ✓ as '.green,`${username}`.bgMagenta)
             const complete_token = await response.json()
             const cookies = response.headers.get('set-cookie')
             resolve({ complete_token, cookies })
@@ -203,7 +203,7 @@ export async function ogLogin({ username, password }) {
             } else {
                 createImg(base64, 'captcha1').then(() => {
                     console.log(
-                        'Captcha 1 generated succesfully ✓'.green,
+                        'captcha1 image generated succesfully ✓'.green,
                         `(${decodedCaptcha})`.bgMagenta,
                     )
                 })
@@ -219,125 +219,7 @@ export async function ogLogin({ username, password }) {
     }
 }
 
-export async function makeBooking(username, authToken, captcha1UID) {
-    const url =
-        'https://www.irctc.co.in/eticketing/protected/mapps1/allLapAvlFareEnq/Y'
 
-    const options = {
-        method: 'POST',
-        headers: {
-            Authorization: `Bearer ${authToken}`,
-            greq: captcha1UID,
-            ...defaultheaders,
-            Cookie: 'JSESSIONID=q8KyEKtFUiG0FgvXiCjbGKiJsmPtjKVCPeVj0ltluPNIDejQxtRi!-1680606407; TS018d84e5=01d83d9ce798028bbe389cf4dbb45ad9c2890574c6be7787f63b5f6ad1a802e13fdc421a11a7291469f38a33e03ed8897844ce5ec3; et_appVIP1=1426214410.17183.0000',
-        },
-        body: JSON.stringify({
-            clusterFlag: 'N',
-            onwardFlag: 'N',
-            cod: 'false',
-            reservationMode: 'WS_TA_B2C',
-            autoUpgradationSelected: true,
-            gnToCkOpted: false,
-            paymentType: '3',
-            twoPhaseAuthRequired: false,
-            captureAddress: 0,
-            wsUserLogin: username,
-            moreThanOneDay: false,
-            clientTransactionId: 'lqpmh1bi',
-            boardingStation: 'BGP',
-            reservationUptoStation: 'ANVT',
-            mobileNumber: '9529250178',
-            ticketType: 'E',
-            mainJourneyTxnId: null,
-            mainJourneyPnr: '',
-            captcha: '',
-            generalistChildConfirm: false,
-            ftBooking: false,
-            loyaltyRedemptionBooking: false,
-            nosbBooking: false,
-            warrentType: 0,
-            ftTnCAgree: false,
-            bookingChoice: 1,
-            bookingConfirmChoice: 1,
-            bookOnlyIfCnf: false,
-            returnJourney: null,
-            connectingJourney: false,
-            lapAvlRequestDTO: [
-                {
-                    trainNo: trainNo,
-                    journeyDate: date,
-                    fromStation: source,
-                    toStation: dest,
-                    journeyClass: jrnyClass,
-                    quota: quota,
-                    coachId: null,
-                    reservationChoice: '99',
-                    ignoreChoiceIfWl: true,
-                    travelInsuranceOpted: 'false',
-                    warrentType: 0,
-                    coachPreferred: false,
-                    autoUpgradation: false,
-                    bookOnlyIfCnf: false,
-                    addMealInput: null,
-                    concessionBooking: false,
-                    passengerList: [
-                        {
-                            passengerName: 'Animay Patel',
-                            passengerAge: 21,
-                            passengerGender: 'M',
-                            passengerBerthChoice: '',
-                            passengerFoodChoice: null,
-                            passengerBedrollChoice: null,
-                            passengerNationality: 'IN',
-                            passengerCardTypeMaster: 'UNIQUE_ICARD',
-                            passengerCardNumberMaster: '217346620883',
-                            psgnConcType: null,
-                            psgnConcCardId: null,
-                            psgnConcDOB: null,
-                            psgnConcCardExpiryDate: null,
-                            psgnConcDOBP: '2002-02-19T18:30:00.000Z',
-                            softMemberId: null,
-                            softMemberFlag: null,
-                            psgnConcCardExpiryDateP: null,
-                            passengerVerified: true,
-                            masterPsgnId: '100000115411810',
-                            mpMemberFlag: null,
-                            passengerForceNumber: null,
-                            passConcessionType: '0',
-                            passUPN: null,
-                            passBookingCode: null,
-                            passengerSerialNumber: 1,
-                            childBerthFlag: true,
-                            passengerCardType: 'UNIQUE_ICARD',
-                            passengerIcardFlag: true,
-                            passengerCardNumber: '217346620883',
-                        },
-                    ],
-                    ssQuotaSplitCoach: 'N',
-                },
-            ],
-            gstDetails: {
-                gstIn: '',
-                error: null,
-            },
-        }),
-    }
-
-    return new Promise(async (resolve, reject) => {
-        try {
-            const response = await fetch(url, options)
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`)
-            }
-
-            const responseBody = await response.json()
-            resolve(responseBody)
-        } catch (error) {
-            reject(error)
-        }
-    })
-}
 
 export async function deprecatedLogin(username, password) {
     return new Promise(async (resolve, reject) => {
@@ -476,7 +358,7 @@ export function validateUser({ access_token, greq, cookies }) {
 
     return new Promise(async (resolve, reject) => {
         try {
-            console.log(`validating user ...`)
+            process.stdout.write(`validating user... `)
             const response = await fetch(url, options)
 
             if (!response.ok) {
@@ -629,7 +511,7 @@ export async function captcha2Verify(
 ) {
     const url = `https://www.irctc.co.in/eticketing/protected/mapps1/captchaverify/${clientTransactionId}/BOOKINGWS/${captcha2}`
 
-    console.log('trying url : '.bgGreen, url)
+    console.log('trying url: '.bgGreen, url)
 
     const options = {
         method: 'GET',
@@ -645,18 +527,28 @@ export async function captcha2Verify(
 
     return new Promise(async (resolve, reject) => {
         try {
-            console.log('verifying captcha 2...')
-            const response = await fetch(url, options)
+                process,stdout.write('verifying captcha 2... ')
+                
+                    
+                    const response = await fetch(url, options)
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`)
-            }
-            console.log(`captcha 2 verification sucessfull ✓`.green)
-            const csrfToken = response.headers.get('Csrf-Token')
-            const responseBody = await response.json()
-            resolve({ responseBody, csrfToken })
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`)
+                    }
+                    const responseBody = await response.json();
+                    const csrfToken = response.headers.get('Csrf-Token');
+                    console.log(`verification sucessfull ✓`.green)
+            
+
+                resolve({ responseBody, csrfToken })
         } catch (error) {
             reject(error)
         }
     })
+}
+
+export function makeBooking(){
+
+    function paymentInit({greq,cookie}){};
+
 }
