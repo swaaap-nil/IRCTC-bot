@@ -4,10 +4,12 @@ import {
     findFareAndAvail,
     getBoardingStationList,
     validateUser,
-    makeBooking,
     sendPassengerDetails,
     captcha2Verify,
+    paymentInit
 } from './api.mjs'
+
+
 
 import global from './helperFunctions/global.mjs'
  import passengerList from './sample-entries/passenger-entry.mjs'
@@ -59,9 +61,14 @@ const finalJourneyParams = {
     concessionPassengers: false,
 }
 
-const credentials = {
+const credentials1 = {
     username: 'ani34430',
     password: 'Patel123@',
+}
+
+const credentials = {
+    username: "sg8576",
+    password : "Shobhit12@"
 }
 
 const {
@@ -139,6 +146,7 @@ const {
     decodedCaptcha: captcha2,
     clientTransactionId,
 } = await sendPassengerDetails(sendPassengerDetailsParams)
+//"avlFareResponseDTO.totalCollectibleAmount": "552.7",
  
  global.setCsrfToken(csrfToken3)   
  global.setClientTransactionID(clientTransactionId)
@@ -170,6 +178,31 @@ console.log(
     `captcha2 Verification Response :`.bgRed,
     `${JSON.stringify(captcha2VerifyResponse, null, 4)}`.cyan,
 )
-
-
 // console.log(`csrf-token 4:`.bgGreen, csrfToken4)
+
+const paymentDetails = {
+    "bankId": 113,
+    "txnType": 1,
+    "paramList": [],
+    "amount": "552.7",
+    "transationId": 0,
+    "txnStatus": 1
+  }
+
+  const paymentInitParams = {
+    greq : global.getGreq(),
+    cookies : global.getCookies(),
+    csrfToken: global.getCsrfToken(),
+    accessToken : global.getAccessToken(),
+    paymentDetails : paymentDetails,
+    clientTransactionId : global.getClientTransactionID()
+
+  }
+
+  const {responseBody, cookies: Cookie1,csrfToken : csrfToken5} = await paymentInit(paymentInitParams)
+  console.log("old cookies".bgGreen,global.getCookies());
+  global.setCookies(Cookie1);
+  global.setCsrfToken(csrfToken5);
+
+  console.log("new cookies".bgGreen,global.getCookies());
+  console.log(JSON.stringify(responseBody,null,4));
