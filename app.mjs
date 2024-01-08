@@ -227,6 +227,6 @@ const paymentDetails = {
   const {responseBody : paymentRedirectResponse ,cookies2} = await paymentRedirect(paymentRedirectParams)
 global.setCookies(cookies2);
 
-console.log(paymentRedirectResponse);
+console.log("paymentRedirectResponse".bgGreen,paymentRedirectResponse);
 
 
