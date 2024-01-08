@@ -171,7 +171,7 @@ export function requestWebToken(username, password, captcha, captchaUID) {
             }
             console.log('acquired successfully ✓ as '.green,`${username}`.bgMagenta)
             const complete_token = await response.json()
-            const cookies = response.headers.get('set-cookie')
+            const cookies = response.headers.getSetCookie();
             resolve({ complete_token, cookies })
         } catch (error) {
             reject(error)
@@ -210,8 +210,7 @@ export async function ogLogin({ username, password }) {
                     )
                 })
 
-                const extractedCookies = extractCookies(cookies)
-                return { complete_token, extractedCookies, captchaUID }
+                return { complete_token, cookies, captchaUID }
             }
         }
 
@@ -470,9 +469,9 @@ export async function sendPassengerDetails({
             const response = await fetch(url, options)
 
             if (!response.ok) {
-                console.log(`${response.json()}`.red)
+                console.log(`${JSON.stringify(response.json())}`.red)
                 console.log(`${response.text()}`.red)
-                throw new Error(`HTTP error! Status: ${response.status}`)
+                throw new Error(`HTTP error! Status: ${response.status} reason :${response.statusText}`)
             }
 
             console.log(`send sucessfull ✓`.green)
@@ -573,8 +572,8 @@ export async function paymentInit({greq,cookie,csrfToken,accessToken,paymentDeta
                   throw new Error(`HTTP error! Status: ${response.status}`);
                 }
                 console.log("raw response".green,JSON.stringify(response, null, 4));
-                const responseBody = response.json();
-                const rawCookies = response.headers.get('set-cookie')
+                const responseBody = response.text();
+                const rawCookies = response.headers.getSetCookie();
                 const csrfToken =  response.headers.get('Csrf-Token')
                 const cookies = extractCookies(rawCookies);
                 resolve({responseBody,cookies,csrfToken})
@@ -584,3 +583,47 @@ export async function paymentInit({greq,cookie,csrfToken,accessToken,paymentDeta
         })
         
       }
+
+
+export async function paymentRedirect(accessToken,username,clientTransactionId,csrfToken,cookies){
+    const url = 'https://www.irctc.co.in/eticketing/PaymentRedirect';
+    const formData = {
+        'token': accessToken,
+        'txn': `${username}:${clientTransactionId}`
+      };
+      
+      formData[`${username}:${clientTransactionId}`] = `${(new Date).getTime() / (1e5 * Math.random())}${csrfToken}${(new Date).getTime() / (1e6 * Math.random())}`;
+
+  const headers = {
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+    'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8',
+    'Content-Type': 'application/x-www-form-urlencoded',
+    'Cookie': cookie,
+    'Origin': 'https://www.irctc.co.in',
+    'Referer': 'https://www.irctc.co.in/nget/payment/paymentredirect',
+    'Sec-Fetch-Dest': 'document',
+    'Sec-Fetch-Mode': 'navigate',
+    'Sec-Fetch-Site': 'same-origin'
+  };
+  process.stdout.write(`Redirecting... `)
+  return new Promise(async(resolve,reject)=>{
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: headers,
+            body: new URLSearchParams(formData).toString()
+          })
+
+          if(!response.ok) throw new Error("Error in get request ",response.statusText)
+          console.log(`redirected`.green);
+          const responseBody = response.text();
+          const cookies = response.headers.getSetCookie();
+          resolve(responseBody,cookies)
+    } catch (error) {
+        reject(error)
+    }
+  })
+  
+    
+      
+    }

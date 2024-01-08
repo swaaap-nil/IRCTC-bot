@@ -4,8 +4,9 @@ let globals = {
   greq: '',
   clientTransactionID: '',
   csrfToken: '',
-  cookies :''
 };
+
+var cookies = []; 
 
 function getAccessToken() {
   return globals.accessToken;
@@ -40,11 +41,22 @@ function setCsrfToken(token) {
 }
 
 function getCookies() {
-  return globals.cookies;
+  return cookies.map(cookie => cookie.split(';')[0]).join('; ');
 }
 
-function setCookies(token) {
-  globals.cookies = token;
+function setCookies(incomingCookiesArray) {
+  incomingCookiesArray.forEach(newCookie => {
+    const cookieKey = newCookie.split('=')[0].trim();
+    const existingCookieIndex = cookies.findIndex(cookie => cookie.startsWith(cookieKey));
+
+    if (existingCookieIndex !== -1) {
+      // Update existing cookie
+      cookies[existingCookieIndex] = newCookie;
+    } else {
+      // Add new cookie to the array
+      cookies.push(newCookie);
+    }
+  });
 }
 
 function logAll() {

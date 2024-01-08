@@ -6,7 +6,8 @@ import {
     validateUser,
     sendPassengerDetails,
     captcha2Verify,
-    paymentInit
+    paymentInit,
+    paymentRedirect
 } from './api.mjs'
 
 
@@ -22,7 +23,7 @@ const trainSearchParameters = {
     date: '20240331', //date format must be YYYYMMDD
 }
 
-var trainList = await searchTrains(trainSearchParameters)
+// var trainList = await searchTrains(trainSearchParameters)
 
 // console.log(`train list:`.blue, JSON.stringify(trainList, null, 4))
 
@@ -37,19 +38,19 @@ const availibiltySearchParams = {
     paymentFlag: 'N',
 }
 
-await new Promise((resolve) => setTimeout(resolve, 2000))
+// await new Promise((resolve) => setTimeout(resolve, 2000))
 
-const fareAndAvailaviltyDetails = await findFareAndAvail(
-    availibiltySearchParams,
-)
+// const fareAndAvailaviltyDetails = await findFareAndAvail(
+//     availibiltySearchParams,
+// )
 
 // console.log(
 //     `fareAndAvailaviltyDetails:`.blue,
 //     JSON.stringify(fareAndAvailaviltyDetails, null, 4),
 // )
 
-await new Promise((resolve) => setTimeout(resolve, 2000))
-//CLICKS BOOK NOW
+// await new Promise((resolve) => setTimeout(resolve, 2000))
+// //CLICKS BOOK NOW
 
 const finalJourneyParams = {
     trainNo: '15658',
@@ -61,25 +62,28 @@ const finalJourneyParams = {
     concessionPassengers: false,
 }
 
-const credentials1 = {
+const credentials = {
     username: 'ani34430',
     password: 'Patel123@',
 }
 
-const credentials = {
+const credentials2 = {
     username: "sg8576",
     password : "Shobhit12@"
 }
 
 const {
     complete_token,
-    extractedCookies: cookies,
+    cookies,
     captchaUID: greq,
 } = await ogLogin(credentials)
+
 
 global.setAccessToken(complete_token.access_token)
 global.setCookies(cookies)
 global.setGreq(greq)
+
+await new Promise((resolve) => setTimeout(resolve, 2000))
 
 // global.logAll();
 
@@ -140,11 +144,13 @@ const sendPassengerDetailsParams = {
     phNumber: phNumber,
 }
 
+await new Promise((resolve) => setTimeout(resolve, 5000))
+
 const {
     responseBody: sendPassengerDetailsResponse,
     csrfToken: csrfToken3,
     decodedCaptcha: captcha2,
-    clientTransactionId,
+    clientTransactionId
 } = await sendPassengerDetails(sendPassengerDetailsParams)
 //"avlFareResponseDTO.totalCollectibleAmount": "552.7",
  
@@ -199,10 +205,20 @@ const paymentDetails = {
 
   }
 
-  const {responseBody, cookies: Cookie1,csrfToken : csrfToken5} = await paymentInit(paymentInitParams)
+  const {responseBody  : paymentInitResoonse, cookies : cookies1 ,csrfToken : csrfToken5} = await paymentInit(paymentInitParams)
   console.log("old cookies".bgGreen,global.getCookies());
-  global.setCookies(Cookie1);
-  global.setCsrfToken(csrfToken5);
-
+  global.setCookies(cookies1);
   console.log("new cookies".bgGreen,global.getCookies());
-  console.log(JSON.stringify(responseBody,null,4));
+
+  global.setCsrfToken(csrfToken5);
+  console.log(responseBody);
+
+  const paymentRedirectParams = {
+    accessToken : global.getAccessToken(),
+    username : credentials.username,
+    clientTransactionId : global.getClientTransactionID(),
+    csrfToken : global.getCsrfToken(),
+    cookies : global.getCookies()
+  }
+
+  const {responseBody} = paymentRedirect(paymentRedirectParams)
