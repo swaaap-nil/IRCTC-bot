@@ -33,10 +33,12 @@ function setClientTransactionID(id) {
 }
 
 function getCsrfToken() {
+  console.log('Getting CSRF Token:',globals.csrfToken );
   return globals.csrfToken;
 }
 
 function setCsrfToken(token) {
+  console.log('Setting CSRF Token:', token);
   globals.csrfToken = token;
 }
 

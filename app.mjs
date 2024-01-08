@@ -6,7 +6,7 @@ import {
     validateUser,
     sendPassengerDetails,
     captcha2Verify,
-    paymentInit,
+    insuranceApplicableNA,
     paymentRedirect
 } from './api.mjs'
 
@@ -23,7 +23,7 @@ const trainSearchParameters = {
     date: '20240331', //date format must be YYYYMMDD
 }
 
-// var trainList = await searchTrains(trainSearchParameters)
+ var trainList = await searchTrains(trainSearchParameters)
 
 // console.log(`train list:`.blue, JSON.stringify(trainList, null, 4))
 
@@ -184,6 +184,9 @@ console.log(
     `captcha2 Verification Response :`.bgRed,
     `${JSON.stringify(captcha2VerifyResponse, null, 4)}`.cyan,
 )
+
+if(captcha2VerifyResponse.status=="FAIL")
+process.exit(0);
 // console.log(`csrf-token 4:`.bgGreen, csrfToken4)
 
 const paymentDetails = {
@@ -206,13 +209,13 @@ const paymentDetails = {
   }
   await new Promise((resolve) => setTimeout(resolve, 2000))
 
-  const {responseBody  : paymentInitResponse, cookies : cookies1 ,csrfToken : csrfToken5} = await paymentInit(paymentInitParams)
+  const {responseBody  : insuranceApplicableNAResponse, cookies : cookies1 ,csrfToken : csrfToken5} = await insuranceApplicableNA(paymentInitParams)
   console.log("old cookies".bgGreen,global.getCookies());
   global.setCookies(cookies1);
   console.log("new cookies".bgGreen,global.getCookies());
 
   global.setCsrfToken(csrfToken5);
-  console.log(paymentInitResponse);
+  console.log("insuranceApplicableNAResponse",insuranceApplicableNAResponse);
 
   const paymentRedirectParams = {
     accessToken : global.getAccessToken(),
@@ -222,11 +225,14 @@ const paymentDetails = {
     cookies : global.getCookies()
   }
 
-  await new Promise((resolve) => setTimeout(resolve, 2000))
 
-  const {responseBody : paymentRedirectResponse ,cookies2} = await paymentRedirect(paymentRedirectParams)
-global.setCookies(cookies2);
 
-console.log("paymentRedirectResponse".bgGreen,paymentRedirectResponse);
+  console.log("paymentRedirectParams",JSON.stringify(paymentRedirectParams,null,3))
+ await new Promise((resolve) => setTimeout(resolve, 2000))
+
+   await paymentRedirect(paymentRedirectParams)
+// global.setCookies(cookies2);
+
+// console.log("paymentRedirectResponse".bgGreen,paymentRedirectResponse);
 
 
