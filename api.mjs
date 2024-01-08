@@ -9,6 +9,8 @@ import decodeCaptcha from './middleware/captchaMiddleWare.mjs'
 import extractCookies from './helperFunctions/cookieExtractor.mjs'
 import { credentials } from '@grpc/grpc-js'
 import { stdout } from 'node:process'
+import { resolve } from 'node:path'
+import { rejects } from 'node:assert'
 
 const defaultheaders = {
     Accept: 'application/json, text/plain, */*',
@@ -218,8 +220,6 @@ export async function ogLogin({ username, password }) {
         console.error('An error occurred:'.yellow, error)
     }
 }
-
-
 
 export async function deprecatedLogin(username, password) {
     return new Promise(async (resolve, reject) => {
@@ -547,8 +547,40 @@ export async function captcha2Verify(
     })
 }
 
-export function makeBooking(){
 
-    function paymentInit({greq,cookie}){};
 
-}
+export async function paymentInit({greq,cookie,csrfToken,accessToken,paymentDetails,clientTransactionId}) {
+        const options = {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json; charset=UTF-8',
+            'Cookie': cookie,
+            'Origin': 'https://www.irctc.co.in',
+            'Referer': 'https://www.irctc.co.in/nget/payment/bkgPaymentOptions',
+            'bmirak': 'webbm',
+            'greq': greq,
+            'spa-csrf-token': csrfToken
+          },
+          body: JSON.stringify(paymentDetails)
+        };
+        
+        return  new Promise(async(resolve,reject)=>{
+            try {
+                const response = await fetch(`https://www.irctc.co.in/eticketing/protected/mapps1/bookingInitPayment/${clientTransactionId}?insurenceApplicable=NA`, options);
+            
+                if (!response.ok) {
+                  throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                console.log("raw response".green,JSON.stringify(response, null, 4));
+                const responseBody = response.json();
+                const rawCookies = response.headers.get('set-cookie')
+                const csrfToken =  response.headers.get('Csrf-Token')
+                const cookies = extractCookies(rawCookies);
+                resolve({responseBody,cookies,csrfToken})
+              } catch (error) {
+                reject(error)
+              }
+        })
+        
+      }

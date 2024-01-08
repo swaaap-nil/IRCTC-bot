@@ -22,8 +22,8 @@ const swap = protoDescriptor.swap
 
 // Create a new client instance
 const client = new swap.CaptchaDecoder(
-    // 'localhost:50051',
-    '192.168.31.232:50051',
+    'localhost:50051',
+    // '192.168.31.232:50051',
     grpc.credentials.createInsecure(),
 )
 
