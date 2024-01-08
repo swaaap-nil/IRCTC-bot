@@ -571,11 +571,11 @@ export async function paymentInit({greq,cookie,csrfToken,accessToken,paymentDeta
                 if (!response.ok) {
                   throw new Error(`HTTP error! Status: ${response.status}`);
                 }
-                console.log("raw response".green,JSON.stringify(response, null, 4));
-                const responseBody = response.text();
-                const rawCookies = response.headers.getSetCookie();
+                // console.log("raw response".green,JSON.stringify(response, null, 4));
+                const responseBody = await response.text();
+                const cookies = response.headers.getSetCookie();
                 const csrfToken =  response.headers.get('Csrf-Token')
-                const cookies = extractCookies(rawCookies);
+                // const cookies = extractCookies(rawCookies);
                 resolve({responseBody,cookies,csrfToken})
               } catch (error) {
                 reject(error)
@@ -598,7 +598,7 @@ export async function paymentRedirect(accessToken,username,clientTransactionId,c
     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
     'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8',
     'Content-Type': 'application/x-www-form-urlencoded',
-    'Cookie': cookie,
+    'Cookie': cookies,
     'Origin': 'https://www.irctc.co.in',
     'Referer': 'https://www.irctc.co.in/nget/payment/paymentredirect',
     'Sec-Fetch-Dest': 'document',
@@ -614,11 +614,15 @@ export async function paymentRedirect(accessToken,username,clientTransactionId,c
             body: new URLSearchParams(formData).toString()
           })
 
-          if(!response.ok) throw new Error("Error in get request ",response.statusText)
+          if(!response.ok){
+            console.log("redirect response not ok");
+            console.log(`response`.bgYellow,await response.text())
+            throw new Error("Error in get request ",response.statusText,"reason: ",response.status)
+          } 
           console.log(`redirected`.green);
-          const responseBody = response.text();
+          const responseBody = await response.text();
           const cookies = response.headers.getSetCookie();
-          resolve(responseBody,cookies)
+          resolve({responseBody,cookies})
     } catch (error) {
         reject(error)
     }

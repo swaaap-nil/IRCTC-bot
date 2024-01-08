@@ -38,18 +38,18 @@ const availibiltySearchParams = {
     paymentFlag: 'N',
 }
 
-// await new Promise((resolve) => setTimeout(resolve, 2000))
+await new Promise((resolve) => setTimeout(resolve, 2000))
 
-// const fareAndAvailaviltyDetails = await findFareAndAvail(
-//     availibiltySearchParams,
-// )
+const fareAndAvailaviltyDetails = await findFareAndAvail(
+    availibiltySearchParams,
+)
 
 // console.log(
 //     `fareAndAvailaviltyDetails:`.blue,
 //     JSON.stringify(fareAndAvailaviltyDetails, null, 4),
 // )
 
-// await new Promise((resolve) => setTimeout(resolve, 2000))
+await new Promise((resolve) => setTimeout(resolve, 2000))
 // //CLICKS BOOK NOW
 
 const finalJourneyParams = {
@@ -204,14 +204,15 @@ const paymentDetails = {
     clientTransactionId : global.getClientTransactionID()
 
   }
+  await new Promise((resolve) => setTimeout(resolve, 2000))
 
-  const {responseBody  : paymentInitResoonse, cookies : cookies1 ,csrfToken : csrfToken5} = await paymentInit(paymentInitParams)
+  const {responseBody  : paymentInitResponse, cookies : cookies1 ,csrfToken : csrfToken5} = await paymentInit(paymentInitParams)
   console.log("old cookies".bgGreen,global.getCookies());
   global.setCookies(cookies1);
   console.log("new cookies".bgGreen,global.getCookies());
 
   global.setCsrfToken(csrfToken5);
-  console.log(responseBody);
+  console.log(paymentInitResponse);
 
   const paymentRedirectParams = {
     accessToken : global.getAccessToken(),
@@ -221,4 +222,11 @@ const paymentDetails = {
     cookies : global.getCookies()
   }
 
-  const {responseBody} = paymentRedirect(paymentRedirectParams)
+  await new Promise((resolve) => setTimeout(resolve, 2000))
+
+  const {responseBody : paymentRedirectResponse ,cookies2} = await paymentRedirect(paymentRedirectParams)
+global.setCookies(cookies2);
+
+console.log(paymentRedirectResponse);
+
+
