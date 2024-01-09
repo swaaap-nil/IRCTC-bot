@@ -7,15 +7,19 @@ import {
     sendPassengerDetails,
     captcha2Verify,
     insuranceApplicableNA,
-    paymentRedirect
+    paymentRedirect,
+    irctcRequestAction,
+    surchargechargeLocal,
+    upiPay,
+    verifyUpiPay,
 } from './api.mjs'
-
-
+import * as cheerio from 'cheerio'
+import extractFromHtml from './helperFunctions/htmlExtractor.mjs'
+import generateRandomSessionId from './helperFunctions/sessionIdGen.mjs'
 
 import global from './helperFunctions/global.mjs'
- import passengerList from './sample-entries/passenger-entry.mjs'
+import passengerList from './sample-entries/passenger-entry.mjs'
 import * as colors from 'colors'
-
 
 const trainSearchParameters = {
     source: 'BGP',
@@ -23,8 +27,9 @@ const trainSearchParameters = {
     date: '20240331', //date format must be YYYYMMDD
 }
 
- var trainList = await searchTrains(trainSearchParameters)
+var { responseBody: trainList } = await searchTrains(trainSearchParameters)
 
+//  console.log(cookies);
 // console.log(`train list:`.blue, JSON.stringify(trainList, null, 4))
 
 const availibiltySearchParams = {
@@ -40,9 +45,7 @@ const availibiltySearchParams = {
 
 await new Promise((resolve) => setTimeout(resolve, 2000))
 
-const fareAndAvailaviltyDetails = await findFareAndAvail(
-    availibiltySearchParams,
-)
+const fareAndAvailaviltyDetails = await findFareAndAvail(availibiltySearchParams)
 
 // console.log(
 //     `fareAndAvailaviltyDetails:`.blue,
@@ -67,17 +70,12 @@ const credentials = {
     password: 'Patel123@',
 }
 
-const credentials2 = {
-    username: "sg8576",
-    password : "Shobhit12@"
+const credentials1 = {
+    username: 'sg8576',
+    password: 'Shobhit12@',
 }
 
-const {
-    complete_token,
-    cookies,
-    captchaUID: greq,
-} = await ogLogin(credentials)
-
+const { complete_token, cookies, captchaUID: greq } = await ogLogin(credentials)
 
 global.setAccessToken(complete_token.access_token)
 global.setCookies(cookies)
@@ -93,20 +91,18 @@ await new Promise((resolve) => setTimeout(resolve, 2000))
 // // )
 // // console.log(`cookies:`.bgRed, `${global.getCookies()}`.blue)
 
-var { csrfToken: csrfToken1, responseBody: validateUserResponse } =
-    await validateUser({
-        access_token: global.getAccessToken(),
-        cookies : global.getCookies(),
-        greq :global.getGreq(),
-    })
+var { csrfToken: csrfToken1, responseBody: validateUserResponse } = await validateUser({
+    access_token: global.getAccessToken(),
+    cookies: global.getCookies(),
+    greq: global.getGreq(),
+})
 
-global.setCsrfToken(csrfToken1);
+global.setCsrfToken(csrfToken1)
 
 // // console.log(
 // //     `validate user response :`.bgRed,
 // //     `${JSON.stringify(validateUserResponse, null, 4)}`.cyan,
 // // )
-
 
 // // console.log(`csrf-token 1:`.bgGreen, csrfToken1)
 
@@ -122,14 +118,12 @@ const { boardingStationList, csrfToken: csrfToken2 } =
 
 global.setCsrfToken(csrfToken2)
 
-
 // console.log(
 //     `boardingStationList :`.bgRed,
 //     `${JSON.stringify(boardingStationList, null, 4)}`.cyan,
 // )
 
 // // console.log(`csrf-token 2:`.bgGreen, csrfToken2)
-
 
 const phNumber = '9529250178'
 
@@ -150,12 +144,13 @@ const {
     responseBody: sendPassengerDetailsResponse,
     csrfToken: csrfToken3,
     decodedCaptcha: captcha2,
-    clientTransactionId
+    clientTransactionId,
 } = await sendPassengerDetails(sendPassengerDetailsParams)
-//"avlFareResponseDTO.totalCollectibleAmount": "552.7",
- 
- global.setCsrfToken(csrfToken3)   
- global.setClientTransactionID(clientTransactionId)
+
+const totalAmount = sendPassengerDetailsResponse.avlFareResponseDTO.totalCollectibleAmount
+
+global.setCsrfToken(csrfToken3)
+global.setClientTransactionID(clientTransactionId)
 
 // delete sendPassengerDetails.bankDetailDTO
 
@@ -174,65 +169,123 @@ const captcha2VerifyParams = {
     clientTransactionId: global.getClientTransactionID(),
 }
 
-
-//TODO handle captcha fails => if (captcha2VerifyResponse.error == "Invalid Captcha")
-const {responseBody : captcha2VerifyResponse, csrfToken : csrfToken4 }= await captcha2Verify(captcha2VerifyParams)
+const { responseBody: captcha2VerifyResponse, csrfToken: csrfToken4 } =
+    await captcha2Verify(captcha2VerifyParams)
 global.setCsrfToken(csrfToken4)
 
+if (captcha2VerifyResponse.status == 'FAIL' && captcha2VerifyResponse.error == 'Invalid Captcha') {
+    console.log('couldnt autofill captcha2'.red)
+    process.exit(0)
+}
 
 console.log(
     `captcha2 Verification Response :`.bgRed,
     `${JSON.stringify(captcha2VerifyResponse, null, 4)}`.cyan,
 )
 
-if(captcha2VerifyResponse.status=="FAIL")
-process.exit(0);
 // console.log(`csrf-token 4:`.bgGreen, csrfToken4)
 
 const paymentDetails = {
-    "bankId": 113,
-    "txnType": 1,
-    "paramList": [],
-    "amount": "552.7",
-    "transationId": 0,
-    "txnStatus": 1
-  }
+    bankId: 113,
+    txnType: 1,
+    paramList: [],
+    amount: totalAmount,
+    transationId: 0,
+    txnStatus: 1,
+}
 
-  const paymentInitParams = {
-    greq : global.getGreq(),
-    cookies : global.getCookies(),
+const insuranceAppParams = {
+    greq: global.getGreq(),
+    cookies: global.getCookies(),
     csrfToken: global.getCsrfToken(),
-    accessToken : global.getAccessToken(),
-    paymentDetails : paymentDetails,
-    clientTransactionId : global.getClientTransactionID()
+    accessToken: global.getAccessToken(),
+    paymentDetails: paymentDetails,
+    clientTransactionId: global.getClientTransactionID(),
+}
+await new Promise((resolve) => setTimeout(resolve, 2000))
 
-  }
-  await new Promise((resolve) => setTimeout(resolve, 2000))
+const {
+    responseBody: insuranceApplicableNAResponse,
+    cookies: cookies1,
+    csrfToken: csrfToken5,
+} = await insuranceApplicableNA(insuranceAppParams)
 
-  const {responseBody  : insuranceApplicableNAResponse, cookies : cookies1 ,csrfToken : csrfToken5} = await insuranceApplicableNA(paymentInitParams)
-  console.log("old cookies".bgGreen,global.getCookies());
-  global.setCookies(cookies1);
-  console.log("new cookies".bgGreen,global.getCookies());
+global.setCookies(cookies1)
+global.setCsrfToken(csrfToken5)
 
-  global.setCsrfToken(csrfToken5);
-  console.log("insuranceApplicableNAResponse",insuranceApplicableNAResponse);
+console.log('insuranceApplicableNAResponse'.bgGreen, insuranceApplicableNAResponse)
+if (insuranceApplicableNAResponse.errorMsg === 'Unable to process your request.') {
+    console.log('server said Unable to process your request.'.red)
+    process.exit()
+}
 
-  const paymentRedirectParams = {
-    accessToken : global.getAccessToken(),
-    username : credentials.username,
-    clientTransactionId : global.getClientTransactionID(),
-    csrfToken : global.getCsrfToken(),
-    cookies : global.getCookies()
-  }
+const paymentRedirectParams = {
+    accessToken: global.getAccessToken(),
+    username: credentials.username,
+    clientTransactionId: global.getClientTransactionID(),
+    csrfToken: global.getCsrfToken(),
+    cookies: global.getCookies(),
+}
 
+//   console.log("paymentRedirectParams",JSON.stringify(paymentRedirectParams,null,3))
+await new Promise((resolve) => setTimeout(resolve, 2000))
 
+const { responseBody: paymentRedirectHtml, cookies: cookies2 } =
+    await paymentRedirect(paymentRedirectParams)
+global.setCookies(cookies2)
 
-  console.log("paymentRedirectParams",JSON.stringify(paymentRedirectParams,null,3))
- await new Promise((resolve) => setTimeout(resolve, 2000))
+//  console.log("paymentRedirectResponse".bgGreen,paymentRedirectHtml);
 
-   await paymentRedirect(paymentRedirectParams)
-// global.setCookies(cookies2);
+//   global.setCookies([`JSESSIONID=${generateRandomSessionId(32)};`])
 
-// console.log("paymentRedirectResponse".bgGreen,paymentRedirectResponse);
+const encData = extractFromHtml(paymentRedirectHtml, 'input[name="encdata"]', 'val')
 
+console.log('encData'.bgGreen, encData)
+const { cookies: cookies4, responseBody: irctcRequestActionResponse } = await irctcRequestAction({
+    cookies: global.getCookies(),
+    encData: encData,
+})
 
+global.setCookies(cookies4)
+
+const { responseBody: surchargeLocalHtml, cookies: cookies5 } = await surchargechargeLocal({
+    cookies: global.getCookies(),
+})
+global.setCookies(cookies5)
+//instead of parsing three times ,parse once
+const customToken = extractFromHtml(surchargeLocalHtml, '[name="customToken"]', 'val').trim()
+const orderID = extractFromHtml(surchargeLocalHtml, '#orderId', 'text').trim()
+const amount = extractFromHtml(surchargeLocalHtml, '#amount', 'text').trim()
+
+console.log('customToken'.green, `${customToken}`.bgBlue)
+console.log('orderID'.green, `${orderID}`.bgBlue)
+console.log('amount'.green, `${amount}`.bgBlue)
+
+const upiID = '8969971626@ybl'
+const upiPayParams = {
+    customToken: customToken,
+    upiID: upiID,
+    orderID: orderID,
+    amount: amount,
+    cookies: global.getCookies(),
+}
+
+console.log('upiPayParams', JSON.stringify(upiPayParams, null, 2))
+
+const { responseBody: upiPayResponseBody, cookies: cookies6 } = await upiPay(upiPayParams)
+
+global.setCookies(cookies6)
+
+console.log('upiPayResponseBody', upiPayResponseBody)
+
+const verifyUpiParams = {
+    cookies: global.getCookies(),
+    customToken: customToken,
+    pageRefNum: upiPayResponseBody.pageRefNum,
+    pgRefHash: upiPayResponseBody.pgRefHash,
+}
+
+await new Promise((resolve) => setTimeout(resolve, 3000))
+setInterval(() => {
+    verifyUpiPay(verifyUpiParams)
+}, 10000)

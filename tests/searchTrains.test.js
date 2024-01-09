@@ -7,11 +7,7 @@ test('searching train from BGP->ANVT tommorrow', async () => {
     tomorrow.setDate(today.getDate() + 1)
 
     //TEST
-    const response = await searchTrains(
-        'BGP',
-        'ANVT',
-        formatDateToYYYYMMDD(tomorrow),
-    )
+    const response = await searchTrains('BGP', 'ANVT', formatDateToYYYYMMDD(tomorrow))
     const responseData = await response.json()
 
     expect(responseData).toHaveReturned

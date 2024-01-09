@@ -1,4 +1,4 @@
-import Passenger from "../helperFunctions/passenger.mjs";
+import Passenger from '../helperFunctions/passenger.mjs'
 
 const passengerList = [
     new Passenger({
@@ -14,6 +14,6 @@ const passengerList = [
         passengerGender: 'M',
         passengerBerthChoice: 'SU',
     }),
-];
+]
 
-export default passengerList;
+export default passengerList
