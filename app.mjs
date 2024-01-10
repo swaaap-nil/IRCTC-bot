@@ -12,14 +12,24 @@ import {
     surchargechargeLocal,
     upiPay,
     verifyUpiPay,
+    logout
 } from './api.mjs'
 import * as cheerio from 'cheerio'
 import extractFromHtml from './helperFunctions/htmlExtractor.mjs'
 import generateRandomSessionId from './helperFunctions/sessionIdGen.mjs'
-
 import global from './helperFunctions/global.mjs'
 import passengerList from './sample-entries/passenger-entry.mjs'
 import * as colors from 'colors'
+
+function initLogout(){
+    const logoutParams = {
+        accessToken : global.getAccessToken(),
+        cookies :global.getCookies(),
+        greq: global.getGreq(),
+        csrfToken : global.getCsrfToken()
+    }
+    logout(logoutParams);
+}
 
 const trainSearchParameters = {
     source: 'BGP',
@@ -45,7 +55,9 @@ const availibiltySearchParams = {
 
 await new Promise((resolve) => setTimeout(resolve, 2000))
 
-const fareAndAvailaviltyDetails = await findFareAndAvail(availibiltySearchParams)
+const fareAndAvailaviltyDetails = await findFareAndAvail(
+    availibiltySearchParams,
+)
 
 // console.log(
 //     `fareAndAvailaviltyDetails:`.blue,
@@ -65,12 +77,12 @@ const finalJourneyParams = {
     concessionPassengers: false,
 }
 
-const credentials = {
+const credentials1 = {
     username: 'ani34430',
     password: 'Patel123@',
 }
 
-const credentials1 = {
+const credentials = {
     username: 'sg8576',
     password: 'Shobhit12@',
 }
@@ -91,11 +103,12 @@ await new Promise((resolve) => setTimeout(resolve, 2000))
 // // )
 // // console.log(`cookies:`.bgRed, `${global.getCookies()}`.blue)
 
-var { csrfToken: csrfToken1, responseBody: validateUserResponse } = await validateUser({
-    access_token: global.getAccessToken(),
-    cookies: global.getCookies(),
-    greq: global.getGreq(),
-})
+var { csrfToken: csrfToken1, responseBody: validateUserResponse } =
+    await validateUser({
+        access_token: global.getAccessToken(),
+        cookies: global.getCookies(),
+        greq: global.getGreq(),
+    })
 
 global.setCsrfToken(csrfToken1)
 
@@ -147,7 +160,8 @@ const {
     clientTransactionId,
 } = await sendPassengerDetails(sendPassengerDetailsParams)
 
-const totalAmount = sendPassengerDetailsResponse.avlFareResponseDTO.totalCollectibleAmount
+const totalAmount =
+    sendPassengerDetailsResponse.avlFareResponseDTO.totalCollectibleAmount
 
 global.setCsrfToken(csrfToken3)
 global.setClientTransactionID(clientTransactionId)
@@ -173,9 +187,12 @@ const { responseBody: captcha2VerifyResponse, csrfToken: csrfToken4 } =
     await captcha2Verify(captcha2VerifyParams)
 global.setCsrfToken(csrfToken4)
 
-if (captcha2VerifyResponse.status == 'FAIL' && captcha2VerifyResponse.error == 'Invalid Captcha') {
+if (
+    captcha2VerifyResponse.status == 'FAIL' &&
+    captcha2VerifyResponse.error == 'Invalid Captcha'
+) {
     console.log('couldnt autofill captcha2'.red)
-    process.exit(0)
+    initLogout();
 }
 
 console.log(
@@ -213,10 +230,16 @@ const {
 global.setCookies(cookies1)
 global.setCsrfToken(csrfToken5)
 
-console.log('insuranceApplicableNAResponse'.bgGreen, insuranceApplicableNAResponse)
-if (insuranceApplicableNAResponse.errorMsg === 'Unable to process your request.') {
+console.log(
+    'insuranceApplicableNAResponse'.bgGreen,
+    insuranceApplicableNAResponse,
+)
+if (
+    insuranceApplicableNAResponse.errorMsg === 'Unable to process your request.'
+) {
     console.log('server said Unable to process your request.'.red)
-    process.exit()
+    console.log("usually happens when prev failed transactions or too many request from same id")
+    initLogout()
 }
 
 const paymentRedirectParams = {
@@ -238,41 +261,63 @@ global.setCookies(cookies2)
 
 //   global.setCookies([`JSESSIONID=${generateRandomSessionId(32)};`])
 
-const encData = extractFromHtml(paymentRedirectHtml, 'input[name="encdata"]', 'val')
+const encData = extractFromHtml(
+    paymentRedirectHtml,
+    'input[name="encdata"]',
+    'val',
+)
 
 console.log('encData'.bgGreen, encData)
-const { cookies: cookies4, responseBody: irctcRequestActionResponse } = await irctcRequestAction({
-    cookies: global.getCookies(),
-    encData: encData,
-})
+const { cookies: cookies4, responseBody: irctcRequestActionResponse } =
+    await irctcRequestAction({
+        cookies: global.getCookies(),
+        encData: encData,
+    })
 
 global.setCookies(cookies4)
 
-const { responseBody: surchargeLocalHtml, cookies: cookies5 } = await surchargechargeLocal({
-    cookies: global.getCookies(),
-})
+const { responseBody: surchargeLocalHtml, cookies: cookies5 } =
+    await surchargechargeLocal({ cookies: global.getCookies() })
 global.setCookies(cookies5)
 //instead of parsing three times ,parse once
-const customToken = extractFromHtml(surchargeLocalHtml, '[name="customToken"]', 'val').trim()
+const customToken = extractFromHtml(
+    surchargeLocalHtml,
+    '[name="customToken"]',
+    'val',
+).trim()
 const orderID = extractFromHtml(surchargeLocalHtml, '#orderId', 'text').trim()
-const amount = extractFromHtml(surchargeLocalHtml, '#amount', 'text').trim()
+const amountwithSymbol = extractFromHtml(surchargeLocalHtml, '#amount', 'text').trim()
 
 console.log('customToken'.green, `${customToken}`.bgBlue)
 console.log('orderID'.green, `${orderID}`.bgBlue)
-console.log('amount'.green, `${amount}`.bgBlue)
+console.log('amount'.green, `${amountwithSymbol}`.bgBlue)
 
+
+function getSpecialCookies() {
+    const filteredCookies = global.getCookiesArray().filter(cookie => {
+        return cookie.startsWith('JSESSIONID') || cookie.startsWith('GCLB');
+      });
+    
+      const trimmedCookies = filteredCookies.map(cookie => {
+        const cookieValue = cookie.split(';')[0];
+        return cookieValue;
+      });
+    
+      return trimmedCookies.join('; ');
+  }
 const upiID = '8969971626@ybl'
 const upiPayParams = {
     customToken: customToken,
     upiID: upiID,
     orderID: orderID,
-    amount: amount,
-    cookies: global.getCookies(),
+    amount: amountwithSymbol,
+    cookies: getSpecialCookies(),
 }
 
 console.log('upiPayParams', JSON.stringify(upiPayParams, null, 2))
 
-const { responseBody: upiPayResponseBody, cookies: cookies6 } = await upiPay(upiPayParams)
+const { responseBody: upiPayResponseBody, cookies: cookies6 } =
+    await upiPay(upiPayParams)
 
 global.setCookies(cookies6)
 

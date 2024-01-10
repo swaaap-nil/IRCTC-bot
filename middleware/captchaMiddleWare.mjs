@@ -39,7 +39,7 @@ export default function decodeCaptcha(base64Data) {
                 // console.log(response)
                 const text = response.text_data
                 console.warn('decode successfull ✓'.green)
-                const sanitizedText = text.replace(/\s/g, '$') //removes any spaces in the text
+                const sanitizedText = text.replace(/\s/g, '')
                 resolve(sanitizedText)
             }
         })

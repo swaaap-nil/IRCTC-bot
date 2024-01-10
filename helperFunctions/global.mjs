@@ -46,6 +46,10 @@ function getCookies() {
     return cookies.map((cookie) => cookie.split(';')[0]).join('; ')
 }
 
+function getCookiesArray(){
+    return cookies;
+}
+
 function setCookies(incomingCookiesArray) {
     if (!incomingCookiesArray) return
     incomingCookiesArray.forEach((newCookie) => {
@@ -53,10 +57,9 @@ function setCookies(incomingCookiesArray) {
         const existingCookieIndex = cookies.findIndex((cookie) => cookie.startsWith(cookieKey))
 
         if (existingCookieIndex !== -1 && newCookie !== '') {
-            // Update existing cookie
+            // Update existing cookie if already exists
             cookies[existingCookieIndex] = newCookie
         } else {
-            // Add new cookie to the array
             cookies.push(newCookie)
         }
     })
@@ -78,4 +81,5 @@ export default {
     setCsrfToken,
     getCookies,
     setCookies,
+    getCookiesArray
 }
