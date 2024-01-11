@@ -1,28 +1,25 @@
-import * as cheerio from 'cheerio'
-const html = `<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<html>
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-<title>Payment Redirect</title>
-</head>
-<body>
-        <form action="https://www.irctcipay.com/pgui/jsp/irctcRequestAction" method="POST">
+import puppeteer from "puppeteer";
+const cookies4 = [
+        'JSESSIONID=32E0F6C6C38680E06A000CC56EA6EAA6; Path=/pgui; Secure; HttpOnly; SameSite=None',
+        'GCLB=CISRj66qkK2LOg; path=/; HttpOnly; expires=Wed, 10-Jan-2024 12:23:46 GMT'
+      ];
+      
+      // Function to convert a cookie string into a Network.CookieParam object
+      
+//       Convert array of cookie strings to array of Network.CookieParam objects
+      const cookiesAsObjects = cookies4.map(parseCookieString);
+      
+      console.log(cookiesAsObjects);
 
-                <input type="hidden" name="encdata" value="200DA7FE6BDD9C4E7027BB061BC860E8E2FC237E31B720D7CFE50BE083814773CCEEE53A58D6347DA9F2DC387F2ADD8F2C51336390142A6C9DF8CEAD7E3FFC1313147AD9C7DCDC586BBF549B57BA48264E99EF0AA1902B1FD1478284900E18E344DECA723C06435D43612FB1DE61464CE44523A0A2A077D33D27EB2C38A1E3B5CC35E8ACEA37512BD83EE0E79DBBA6634AE24E09023627C6DE8948BFE3438289AEBAA54CE1F58F26852A21DDC837DCD2D16D9C2B7BF3074838FEDA04D3E95324FF6BC4FB329B3B82A740C6C33FC0BEB6F7650ED6FA8AD6B967C5E5115C61CDAF5BE97C9968F3350BADCB9807C17293592BA62969EB3EFCE54A335E62A193EEDF7DCFE0091BFF9BA7838221D54FA873E04941ABF2F4BF6600DD033FCC31CC4F0C80F396B0995415893C66000F17230E2031212252D166C59ED2CA51B4360C71A8F36A16EFC7294AB722CC9173D97B625E655A10787D560D34B2C7ED1C7D2C2C13">
+       upiPay4(cookiesAsObjects);
+       async function upiPay4( cookies ) {
+                const browser = await puppeteer.launch({headless: false,});
+                const page = await browser.newPage();
+        
+                for(let i=0 ; i<cookies.length; i++)
+                await page.setCookie(cookies[i]);
+   
+        }
 
-</form>
- <center><font size="5" color="#3b4455"> Please Wait...</font></center>
- 
-<script type="text/javascript">
-        document.forms[0].submit();
-</script>  
-
-</body>
-</html>`
-const encData = (paymentRedirectHtml) => {
-    const $ = cheerio.load(paymentRedirectHtml)
-    const encDataValue = $('input[name="encdata"]').val()
-    return encDataValue
-}
-
-console.log(encData(html))
+        
+       

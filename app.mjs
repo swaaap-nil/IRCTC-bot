@@ -11,10 +11,13 @@ import {
     irctcRequestAction,
     surchargechargeLocal,
     upiPay,
+    upiPay4,
+    upiPay0,
     verifyUpiPay,
     logout
 } from './api.mjs'
 import * as cheerio from 'cheerio'
+import { parseCookieString } from './helperFunctions/cookieExtractor.mjs'
 import extractFromHtml from './helperFunctions/htmlExtractor.mjs'
 import generateRandomSessionId from './helperFunctions/sessionIdGen.mjs'
 import global from './helperFunctions/global.mjs'
@@ -228,6 +231,8 @@ const {
 } = await insuranceApplicableNA(insuranceAppParams)
 
 global.setCookies(cookies1)
+console.log("ere")
+console.log("cookies1",cookies1)
 global.setCsrfToken(csrfToken5)
 
 console.log(
@@ -256,7 +261,7 @@ await new Promise((resolve) => setTimeout(resolve, 2000))
 const { responseBody: paymentRedirectHtml, cookies: cookies2 } =
     await paymentRedirect(paymentRedirectParams)
 global.setCookies(cookies2)
-
+console.log("cookies2",cookies2)
 //  console.log("paymentRedirectResponse".bgGreen,paymentRedirectHtml);
 
 //   global.setCookies([`JSESSIONID=${generateRandomSessionId(32)};`])
@@ -268,17 +273,19 @@ const encData = extractFromHtml(
 )
 
 console.log('encData'.bgGreen, encData)
-const { cookies: cookies4, responseBody: irctcRequestActionResponse } =
+const { cookies: cookies3, responseBody: irctcRequestActionResponse } =
     await irctcRequestAction({
         cookies: global.getCookies(),
         encData: encData,
     })
 
-global.setCookies(cookies4)
+global.setCookies(cookies3)
+console.log("cookies3",cookies3)
 
-const { responseBody: surchargeLocalHtml, cookies: cookies5 } =
+const { responseBody: surchargeLocalHtml } =
     await surchargechargeLocal({ cookies: global.getCookies() })
-global.setCookies(cookies5)
+
+
 //instead of parsing three times ,parse once
 const customToken = extractFromHtml(
     surchargeLocalHtml,
@@ -305,32 +312,50 @@ function getSpecialCookies() {
     
       return trimmedCookies.join('; ');
   }
-const upiID = '8969971626@ybl'
+// import { parseCookieString } from "./test.mjs"
+// import { upiPay4 } from "./api.mjs";
+//   const cookies3=[
+//     'JSESSIONID=32E0F6C6C38680E06A000CC56EA6EAA6; Path=/pgui; Secure; HttpOnly; SameSite=None',
+//     'GCLB=CISRj66qkK2LOg; path=/; HttpOnly; expires=Wed, 10-Jan-2024 12:23:46 GMT'
+//   ];
+ const upiID = '8969971626@ybl'
+
 const upiPayParams = {
     customToken: customToken,
     upiID: upiID,
     orderID: orderID,
     amount: amountwithSymbol,
-    cookies: getSpecialCookies(),
+    cookies: cookies3.join("; "),
 }
 
-console.log('upiPayParams', JSON.stringify(upiPayParams, null, 2))
+ console.log('upiPayParams', JSON.stringify(upiPayParams, null, 2))
+
+await new Promise((resolve) => setTimeout(resolve, 4000))
 
 const { responseBody: upiPayResponseBody, cookies: cookies6 } =
     await upiPay(upiPayParams)
+ 
+// global.setCookies(cookies6)
 
-global.setCookies(cookies6)
+ console.log('upiPayResponseBody', upiPayResponseBody)
 
-console.log('upiPayResponseBody', upiPayResponseBody)
+// if(upiPayResponseBody.transactionStatus === 'Rejected'){
+//     console.log("Upi payment couldnt be initiated".red)
+//     console.log("server response:",upiPayResponseBody.responseMessage)
+//     process.exit(0);
+// }
+// else console.log("fir se hogya bc".bgRed)
 
-const verifyUpiParams = {
-    cookies: global.getCookies(),
-    customToken: customToken,
-    pageRefNum: upiPayResponseBody.pageRefNum,
-    pgRefHash: upiPayResponseBody.pgRefHash,
-}
+// const verifyUpiParams = {
+//     cookies: global.getCookies(),
+//     customToken: customToken,
+//     pageRefNum: upiPayResponseBody.pageRefNum,
+//     pgRefHash: upiPayResponseBody.pgRefHash,
+// }
 
-await new Promise((resolve) => setTimeout(resolve, 3000))
-setInterval(() => {
-    verifyUpiPay(verifyUpiParams)
-}, 10000)
+
+
+// await new Promise((resolve) => setTimeout(resolve, 3000))
+// setInterval(() => {
+//     verifyUpiPay(verifyUpiParams)
+// }, 10000)
