@@ -1,9 +1,0 @@
-// t.invoke.apply(this,arguments
-
-// h=function(t){if(!(t=t||e.event))
-
-//make breakpoint at 
-userMaintain
-maintainLoginState
-onConfirm()
-

@@ -1,25 +1,15 @@
-import puppeteer from "puppeteer";
-const cookies4 = [
-        'JSESSIONID=32E0F6C6C38680E06A000CC56EA6EAA6; Path=/pgui; Secure; HttpOnly; SameSite=None',
-        'GCLB=CISRj66qkK2LOg; path=/; HttpOnly; expires=Wed, 10-Jan-2024 12:23:46 GMT'
-      ];
-      
-      // Function to convert a cookie string into a Network.CookieParam object
-      
-//       Convert array of cookie strings to array of Network.CookieParam objects
-      const cookiesAsObjects = cookies4.map(parseCookieString);
-      
-      console.log(cookiesAsObjects);
+// import FormData from "form-data";
+// const form = new FormData();
+//     form.append('token', '36356566446444346');
+//     form.append('vpa', 'upiID');
+//     form.append('upiCustName', 'dummy');
+//     form.append('paymentType', 'UP');
+//     form.append('mopType', 'UP');
+//     form.append('amount', 'Rs 120');
+//     form.append('currencyCode', '356');
+//     form.append('browserName', 'Chrome');
+//     form.append('browserVersion', '120');
 
-       upiPay4(cookiesAsObjects);
-       async function upiPay4( cookies ) {
-                const browser = await puppeteer.launch({headless: false,});
-                const page = await browser.newPage();
-        
-                for(let i=0 ; i<cookies.length; i++)
-                await page.setCookie(cookies[i]);
-   
-        }
+// //   console.log(form.getBoundary())
 
-        
-       
+//   console.log(form.getHeaders()['content-type'])
