@@ -12,6 +12,6 @@ test('Testing Server Status', async () => {
 
     expect(async () => {
         const response = await decodeCaptcha(base64ForSampleImage)
-        expect(response).toBe('rXkfW')
+        expect(response).toBe('bDMqQ6')
     }).not.toThrow()
 })

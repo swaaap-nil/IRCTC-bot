@@ -1,12 +1,14 @@
 import { defaultheaders } from '../models/default-headers.mjs'
 import decodeCaptcha from '../middleware/captcha-middleware.mjs'
 import createImg from '../parsers/image-parser.mjs'
+import global from '../global.mjs'
 function fetchCaptcha() {
     const url = 'https://www.irctc.co.in/eticketing/protected/mapps1/loginCaptcha'
     const options = {
         method: 'GET',
         headers: {
-            greq: `${new Date().getTime()}`
+            greq: `${new Date().getTime()}`,
+            Cookie : `$${global.getCookies()}`
         }
     }
 
@@ -21,6 +23,8 @@ function fetchCaptcha() {
 
             console.log('fetch successfull ✓'.green)
             const responseBody = await response.json()
+            const cookies= response.headers.getSetCookie()
+            global.setCookies(cookies)
             resolve(responseBody)
         } catch (error) {
             console.log('captch fetch failed')
@@ -35,7 +39,8 @@ function requestWebToken(username, password, captcha, captchaUID) {
     const body = `grant_type=password&username=${username}&password=${hashedPass}&captcha=${captcha}&uid=${captchaUID}&otpLogin=false&nlpIdentifier=&nlpAnswer=&nlpToken=&lso=&encodedPwd=true`
     const options = {
         method: 'post',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded',
+                    Cookie : global.getCookies() },
         body: body
     }
 
@@ -57,7 +62,7 @@ function requestWebToken(username, password, captcha, captchaUID) {
     })
 }
 
-export async function ogLogin({ username, password }) {
+export async function ogLogin({ username, password ,cookies}) {
     try {
         let retryCount = 0
 

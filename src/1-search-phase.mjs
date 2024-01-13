@@ -84,12 +84,32 @@ export async function findFareAndAvail({
         headers: headers
     }
     process.stdout.write('fetching fare and availability...')
-    const response = await fetch(url, options)
+    
+    return new Promise(async(resolve,reject)=>{
+       try {
+        const response = await fetch(url, options)
+        if(response.ok){
+            console.log(' fetch successfull ✓'.green)
+            const responseBody = await response.json()
+            const cookies = response.headers.getSetCookie();
+            resolve({responseBody,cookies})
+        }
+        else{
+            console.log("find Fare response not ok. possibilty : use of VPN");
+            console.log(response.text());
+            process.exit(0);
+        }
+       } catch (error) {
+            reject(error)
+       } 
+        
+    })
+    
 
     if (response.status === 404) throw new Error('Server down. Error 404')
     else if (response.status === 200) {
-        console.log(' fetch successfull ✓'.green)
-        return response.json()
+        
+        return 
     } else
         throw new Error(
             `Some error occured.Error code: ${response.status} and response text ${response.text}`

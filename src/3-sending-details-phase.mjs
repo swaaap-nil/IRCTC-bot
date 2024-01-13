@@ -172,8 +172,9 @@ export async function sendPassengerDetails({
             const csrfToken = response.headers.get('Csrf-Token')
             const responseBody = await response.json()
 
-            if (!responseBody) {
+            if (!responseBody || !responseBody.hasOwnProperty('captchaDto')) {
                 console.log('empty responsebody for sendPassengerDetails()')
+                console.log(responseBody)
                 process.exit(0)
             }
             const base64 = responseBody.captchaDto.captchaQuestion
